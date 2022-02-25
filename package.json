@@ -1,0 +1,32 @@
+{
+  "name": "@ahttp/h",
+  "version": "1.0.0",
+  "description": "async http request",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "tsc": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ahttpjs/ahttp.git"
+  },
+  "keywords": [
+    "ahttp"
+  ],
+  "author": "2A5F",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ahttpjs/ahttp/issues"
+  },
+  "homepage": "https://github.com/ahttpjs/ahttp#readme",
+  "devDependencies": {
+    "typescript": "^4.5.5"
+  },
+  "dependencies": {
+    "libsugar": "^2.12.0-beta.5",
+    "merge": "^2.1.1",
+    "rfdc": "^1.3.0",
+    "tslib": "^2.3.1"
+  }
+}
