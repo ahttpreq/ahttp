@@ -1,5 +1,5 @@
 import { FetchImpl } from './impl/fetch'
-import { AHttpImpl } from './types'
+import type { AHttpImpl } from './types'
 
 export interface AHttpSetting {
   impl: AHttpImpl

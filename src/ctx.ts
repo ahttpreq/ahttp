@@ -1,4 +1,4 @@
-import { TEvent } from 'libsugar'
+import { TEvent } from 'libsugar/event'
 import { Box } from 'libsugar/box'
 import { abort } from 'libsugar/fn'
 import { Req, Res } from './reqres'

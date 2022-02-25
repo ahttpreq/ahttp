@@ -7,6 +7,14 @@
       "problemMatcher": [],
       "label": "npm: tsc",
       "detail": "tsc"
+    },
+    {
+      "type": "npm",
+      "script": "build",
+      "group": "build",
+      "problemMatcher": [],
+      "label": "npm: build",
+      "detail": "rollup -c"
     }
   ]
 }

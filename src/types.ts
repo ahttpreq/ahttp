@@ -1,5 +1,5 @@
 import type { Maybe } from 'libsugar/maybe'
-import { Req, Res } from './reqres'
+import type { Req, Res } from './reqres'
 
 /** 参数对象 */
 export type AQueryParams = object
