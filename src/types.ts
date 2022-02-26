@@ -12,8 +12,8 @@ export type AQueryParams = object
  */
 export type AReqType = 'json' | 'query' | 'form' | 'raw'
 
-/** 请求返回的数据类型 */
-export type AResType = 'json' | 'arraybuffer' | 'text' | 'blob' | 'formData'
+/** 请求返回的数据类型, `auto` 将自动尝试返回其中的某一个， */
+export type AResType = 'auto' | 'json' | 'query' | 'arraybuffer' | 'text' | 'blob' | 'formData'
 
 /** 请求地址 */
 export type AUrl = string | URL
@@ -81,6 +81,8 @@ export interface AResponse<T> {
   readonly type: AResType
   /** 响应数据 */
   data: T
+  /** 错误数据 */
+  err?: any
   /** http 头 */
   headers: Headers
   /** 请求是否成功 */
@@ -97,6 +99,8 @@ export interface AResponse<T> {
 export type AHttpImplRes<T> = Promise<{
   /** 响应数据 */
   data: T
+  /** 错误数据 */
+  err?: any
   /** http 头 */
   headers: Headers
   /** 请求是否成功 */

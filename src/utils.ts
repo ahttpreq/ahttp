@@ -7,7 +7,9 @@ import type { AHttpFlow, FlatternAFlow, AQueryParams } from './types'
 import rfdc from 'rfdc'
 import { guard } from 'libsugar/fn'
 import { Box } from 'libsugar/box'
+import { AUrl } from '.'
 export { default as merge } from 'merge'
+import isAbsoluteUrl from 'is-absolute-url'
 
 /** 深度复制对象 */
 export const clone = rfdc({ proto: false, circles: false })
@@ -105,10 +107,23 @@ export function mergeHeaders(a: Headers, b: HeadersInit) {
 /** 尝试构造一个 URL */
 export function tryURL(a: string): Voidable<URL> {
   try {
-    return new URL(a)
+    return makeURL(a)
   } catch (_) {
     return
   }
+}
+
+/** 标准化 URL */
+export function makeURL(url: AUrl, basicUrl?: AUrl): URL {
+  function make<T>(url: T): AUrl | T {
+    if (typeof url === 'string') {
+      if (isAbsoluteUrl(url)) return url
+      else return new URL(url, location.href)
+    }
+    else return url
+  }
+  if (basicUrl != null) return new URL(url, make(basicUrl))
+  else return new URL(make(url))
 }
 
 /** 拍平流水线 */

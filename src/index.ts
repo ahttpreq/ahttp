@@ -2,6 +2,7 @@ export * from './types'
 export * from './setting'
 export * from './is'
 export * from './flow'
+export * from './error'
 import { Box, box } from 'libsugar/box'
 import type { Maybe } from 'libsugar/maybe'
 import { AContextImpl, flowProcessor, makeReq } from './ctx'
@@ -75,7 +76,7 @@ export const AHttp: AHttpStatic = beNew(function (a: any, ...args: any): AHttp {
     const config: AHttpConfig = merge.recursive(clone(defaultConfig ?? {}), instConfig)
     const flow: FlatternAFlow<T>[] = [...flatternFlow<T>(...defaultFlow, ...(instConfig?.flow ?? []), ...insFlow)]
     const ctx = new AContextImpl<T>(config, makeReq(config))
-    const res = await flowProcessor(flow, ctx, impl, config.resType ?? 'json')
+    const res = await flowProcessor(flow, ctx, impl, config.resType ?? 'auto')
     return res
   }
   ahttp.get = async function get(url: AUrl, query?: AQueryParams, config?: any, ...flow: AHttpFlow<any>[]): Promise<any> {

@@ -1,3 +1,4 @@
+import { AHttpError } from '../error'
 import type { AFlow } from '../types'
 
 /** 超时中断 */
@@ -14,4 +15,4 @@ export const timeout =
   }
 
 /** 请求超时错误 */
-export class AHttpTimeOutError extends Error {}
+export class AHttpTimeOutError extends AHttpError {}
