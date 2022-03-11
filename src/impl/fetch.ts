@@ -101,7 +101,7 @@ async function read_body(type: AResType, res: Response) {
       }
     case 'query':
       try {
-        new URLSearchParams(await res.text())
+        return new URLSearchParams(await res.text())
       } catch (e) {
         throw new AHttpReadBodyQueryFormatError(e, res)
       }
