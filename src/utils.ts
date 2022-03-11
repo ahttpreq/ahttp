@@ -1,15 +1,12 @@
 import { used } from 'libsugar/effect'
-import type { Voidable } from 'libsugar/maybe'
 import { pipe } from 'libsugar/pipe'
 import { filter, map } from 'libsugar/seq/fp'
 import { TupleTail } from 'libsugar/types'
-import type { AHttpFlow, FlatternAFlow, AQueryParams } from './types'
+import type { AHttpFlow, AQueryParams } from './types'
 import rfdc from 'rfdc'
-import { guard } from 'libsugar/fn'
 import { Box } from 'libsugar/box'
-import { AUrl } from '.'
+import { DeepAHttpFlow } from '.'
 export { default as merge } from 'merge'
-import isAbsoluteUrl from 'is-absolute-url'
 
 /** 深度复制对象 */
 export const clone = rfdc({ proto: false, circles: false })
@@ -104,70 +101,15 @@ export function mergeHeaders(a: Headers, b: HeadersInit) {
   return a
 }
 
-/** 尝试构造一个 URL */
-export function tryURL(a: string): Voidable<URL> {
-  try {
-    return makeURL(a)
-  } catch (_) {
-    return
-  }
-}
-
-/** 标准化 URL */
-export function makeURL(url: AUrl, basicUrl?: AUrl): URL {
-  function make<T>(url: T): AUrl | T {
-    if (typeof url === 'string') {
-      if (isAbsoluteUrl(url)) return url
-      else return new URL(url, location.href)
-    }
-    else return url
-  }
-  if (basicUrl != null) return new URL(url, make(basicUrl))
-  else return new URL(make(url))
-}
-
 /** 拍平流水线 */
-export function* flatternFlow<T>(...flow: AHttpFlow<T>[]): Iterable<FlatternAFlow<T>> {
-  for (const item of flow) {
-    if (item instanceof Array) {
-      yield* flatternFlow(...item)
-    } else {
-      yield item
+export function* flatternFlow(flow: DeepAHttpFlow): Iterable<AHttpFlow> {
+  if (flow instanceof Array) {
+    for (const item of flow) {
+      yield* flatternFlow(item)
     }
+  } else {
+    yield flow
   }
-}
-
-/** 单次初始化定义 */
-export type WithOnce<T extends object, O extends Record<string, () => any>> = T & { [K in keyof O]: ReturnType<O[K]> }
-
-/** 创建包含单次初始化的对象 */
-export function WithOnce<T extends object, O extends Record<string, () => any>>(obj: T, once: O): WithOnce<T, O> {
-  const r: WithOnce<T, O> = obj as any
-  return Object.defineProperties(
-    r,
-    Object.fromEntries(
-      Object.entries(once).map(([k, v]) => {
-        let value: any
-        let inited = false
-        return [
-          k,
-          guard<PropertyDescriptor>({
-            get() {
-              if (inited) return value
-              else {
-                inited = true
-                value = v()
-              }
-            },
-            set(v) {
-              inited = true
-              value = v
-            },
-          }),
-        ]
-      })
-    )
-  )
 }
 
 /** 惰性的报错，实际使用才会报错的 Promise */

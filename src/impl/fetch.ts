@@ -1,52 +1,125 @@
-import { run } from 'libsugar/effect'
-import type { AHttpImpl, ARequest, AHttpImplRes, AResType, AContext } from '../types'
-import { tryURL } from '../utils'
+import { defineImpl } from '.'
+import {
+  AHttpReadBodyBlobFormatError,
+  AHttpReadBodyBufferFormatError,
+  AHttpReadBodyFormFormatError,
+  AHttpReadBodyJsonFormatError,
+  AHttpReadBodyQueryFormatError,
+  AHttpReadBodyTextFormatError,
+} from '../error'
+import type { AResType, AHttpImplRes, AContext, AHttpImplSession } from '../types'
 
 /** fetch 实现 */
-export const FetchImpl: AHttpImpl = async <T>(ctx: AContext<T>, body: any, req: ARequest, type: AResType): AHttpImplRes<T> => {
+export const FetchImpl = defineImpl(async (ctx: AContext, url: URL, method: string, headers: Headers, body: BodyInit | null): Promise<AHttpImplSession> => {
   const controller = new AbortController()
   ctx.on('abort', () => controller.abort())
-  const rres = await fetch(req.url.href, {
-    method: req.method,
+  const res = await fetch(url.href, {
+    method,
     body,
-    headers: req.headers,
+    headers,
     signal: controller.signal,
     mode: 'cors',
     credentials: 'include',
   })
-  const robj: Awaited<AHttpImplRes<T>> = {
-    headers: rres.headers,
-    ok: rres.ok,
-    status: rres.status,
-    statusText: rres.statusText,
-    url: tryURL(rres.url) ?? req.url,
-  } as any
-  if (rres.ok)
-    robj.data = await run(async () => {
-      if (!rres.ok) return
-      switch (type) {
-        case 'auto':
-          return await read_body_by_content_type(rres, rres.headers.get('content-type'), rres.headers.get('content-length'))
-        case 'text':
-          return await rres.text()
-        case 'blob':
-          return await rres.blob()
-        case 'arraybuffer':
-          return await rres.arrayBuffer()
-        case 'formData':
-          return await rres.formData()
-        case 'query':
-          return new URLSearchParams(await rres.text())
-        default:
-          return await rres.json()
-      }
-    })
-  if (!rres.ok) {
-    try {
-      robj.err = await read_body_by_content_type(rres, rres.headers.get('content-type'), rres.headers.get('content-length'))
-    } catch (_) {}
+  return new FetchAHttpImplSession(res)
+})
+
+class FetchAHttpImplSession implements AHttpImplSession {
+  constructor(public res: Response) {}
+
+  async auto<T>(): Promise<AHttpImplRes<T>> {
+    return await take(this.res, 'auto')
   }
-  return robj
+  async json<T>(): Promise<AHttpImplRes<T>> {
+    return await take(this.res, 'json')
+  }
+  async query(): Promise<AHttpImplRes<URLSearchParams>> {
+    return await take(this.res, 'query')
+  }
+  async buffer(): Promise<AHttpImplRes<ArrayBuffer>> {
+    return await take(this.res, 'buffer')
+  }
+  async text(): Promise<AHttpImplRes<string>> {
+    return await take(this.res, 'text')
+  }
+  async blob(): Promise<AHttpImplRes<Blob>> {
+    return await take(this.res, 'blob')
+  }
+  async form(): Promise<AHttpImplRes<FormData>> {
+    return await take(this.res, 'form')
+  }
+}
+
+async function take<T>(res: Response, type: AResType): Promise<AHttpImplRes<T>> {
+  const data = res.ok ? await read_body(type, res) : void 0
+  const err = !res.ok ? await try_read_body_auto_infer(res) : void 0
+  return {
+    raw: res,
+    data,
+    err,
+    headers: res.headers,
+    ok: res.ok,
+    status: res.status,
+    statusText: res.statusText,
+    url: res.url,
+  }
+}
+
+async function read_body(type: AResType, res: Response) {
+  switch (type) {
+    case 'auto':
+      return await read_body_auto_infer(res)
+    case 'json':
+      try {
+        return await res.json()
+      } catch (e) {
+        throw new AHttpReadBodyJsonFormatError(e, res)
+      }
+    case 'blob':
+      try {
+        return await res.blob()
+      } catch (e) {
+        throw new AHttpReadBodyBlobFormatError(e, res)
+      }
+    case 'buffer':
+      try {
+        return await res.arrayBuffer()
+      } catch (e) {
+        throw new AHttpReadBodyBufferFormatError(e, res)
+      }
+    case 'form':
+      try {
+        return await res.formData()
+      } catch (e) {
+        throw new AHttpReadBodyFormFormatError(e, res)
+      }
+    case 'text':
+      try {
+        return await res.text()
+      } catch (e) {
+        throw new AHttpReadBodyTextFormatError(e, res)
+      }
+    case 'query':
+      try {
+        new URLSearchParams(await res.text())
+      } catch (e) {
+        throw new AHttpReadBodyQueryFormatError(e, res)
+      }
+    default:
+      return await read_body_auto_infer(res)
+  }
+}
+
+async function read_body_auto_infer(res: Response) {
+  return await read_body_by_content_type(res, res.headers.get('content-type'), res.headers.get('content-length'))
+}
+
+async function try_read_body_auto_infer(res: Response) {
+  try {
+    return await read_body_by_content_type(res, res.headers.get('content-type'), res.headers.get('content-length'))
+  } catch (_) {
+    return
+  }
 }
 
 /** 判断是否应该用 text 读 */
@@ -99,19 +172,43 @@ const blob_types = new Set([
 async function read_body_by_content_type(res: Response, content_type?: string | null, content_length?: string | null) {
   if (content_length && !+content_length) return
   if (!content_type || text_start.test(content_type) || text_types.has(content_type)) {
-    return await res.text()
+    try {
+      return await res.text()
+    } catch (e) {
+      throw new AHttpReadBodyTextFormatError(e, res)
+    }
   }
   if (content_type === 'application/json' || content_type === 'text/json') {
-    return await res.json()
+    try {
+      return await res.json()
+    } catch (e) {
+      throw new AHttpReadBodyJsonFormatError(e, res)
+    }
   }
   if (content_type === 'application/x-www-form-urlencoded') {
-    return new URLSearchParams(await res.text())
+    try {
+      new URLSearchParams(await res.text())
+    } catch (e) {
+      throw new AHttpReadBodyQueryFormatError(e, res)
+    }
   }
   if (blob_start.test(content_type) || blob_types.has(content_type)) {
-    return await res.blob()
+    try {
+      return await res.blob()
+    } catch (e) {
+      throw new AHttpReadBodyBlobFormatError(e, res)
+    }
   }
   if (content_type === 'multipart/form-data') {
-    return await res.formData()
+    try {
+      return await res.formData()
+    } catch (e) {
+      throw new AHttpReadBodyFormFormatError(e, res)
+    }
   }
-  return await res.text()
+  try {
+    return await res.text()
+  } catch (e) {
+    throw new AHttpReadBodyTextFormatError(e, res)
+  }
 }
