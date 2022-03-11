@@ -15,6 +15,13 @@
       "problemMatcher": [],
       "label": "npm: build",
       "detail": "rollup -c"
+    },
+    {
+      "type": "npm",
+      "script": "test_server",
+      "problemMatcher": [],
+      "label": "npm: test_server",
+      "detail": "vite"
     }
   ]
 }
