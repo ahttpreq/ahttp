@@ -32,3 +32,7 @@ export const AHttp: AHttpStatic = beNew(function (...args: any): AHttp {
 
 /** 异步 http 请求 */
 export const ahttp = new AHttp()
+
+export default ahttp
+
+export { ahttp as h, ahttp as ah }

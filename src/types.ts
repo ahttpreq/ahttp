@@ -115,7 +115,7 @@ export type AFlowOption = {
   /** 请求基础的 url， 不填的话将是当前页面的地址 */
   base?: AUrl
   /** 请求发送的数据类型，默认 json */
-  type: AReqType
+  type?: AReqType
   /** 存放在 body 内的数据 */
   data?: AHttpPayload
   /** 从 url 传递的参数 */
