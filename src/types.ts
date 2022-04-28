@@ -158,6 +158,8 @@ export interface AHttpChain {
 
 /** AHttp 实例会话，创建会话时尚未实际发起请求 */
 export interface AHttpSession {
+  /** 增加处理器 */
+  use(...flows: DeepAHttpFlow[]): AHttpSession
   /** 自动推断返回类型 */
   auto<T>(): Promise<AResponse<T>>
   /** 按 `JSON` 格式解析 */

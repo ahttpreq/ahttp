@@ -1,6 +1,6 @@
 {
   "name": "@ahttp/h",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "async http request",
   "main": "./dist/ahttp.esm-bundler.mjs",
   "module": "./dist/ahttp.esm-bundler.mjs",

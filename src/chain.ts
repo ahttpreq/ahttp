@@ -34,6 +34,9 @@ export class AHttpChainImpl implements AHttpChain {
 export class AHttpSessionImpl implements AHttpSession {
   constructor(public impl: Box<AHttpImpl>, public url: AUrl, public flows: DeepAHttpFlow, public method: string) {}
 
+  use(...flows: DeepAHttpFlow[]): AHttpSession {
+    return new AHttpSessionImpl(this.impl, this.url, [this.flows, flows], this.method)
+  }
   async auto<T>(): Promise<AResponse<T>> {
     return await sessionSend(this, 'auto')
   }
